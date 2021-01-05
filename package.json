@@ -1,0 +1,26 @@
+{
+  "name": "cgans",
+  "version": "1.0.0",
+  "description": "",
+  "main": "emailNotificationService.js",
+  "scripts": {
+    "start": "node emailNotificationService",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gocodeup/CGANS.git"
+  },
+  "author": "samuelmoorec",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gocodeup/CGANS/issues"
+  },
+  "homepage": "https://github.com/gocodeup/CGANS#readme",
+  "dependencies": {
+    "@octokit/core": "^3.2.4",
+    "luxon": "^1.25.0",
+    "node-cron": "^2.0.3",
+    "nodemailer": "^6.4.17"
+  }
+}

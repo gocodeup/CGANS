@@ -1,2 +1,7 @@
+node_modules
+coverage
+build
+*.log
 credentials.json
 data/*
+logs.txt
