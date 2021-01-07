@@ -69,7 +69,7 @@ const checkGitHubActivity = (userName) => {
       const currentDate = DateTime.local().toLocaleString();
       const EmailSubject = `${currentDate}, No Github Activity`;
       const superDisapointedEmail = `<h2>Dear ${userName}</h2><p>You currently have no github activity, this is very concerning and can negativley impact your job search.</p><p>You can view your current github activity <a href="https://github.com/${userName}">HERE</a></p>`;
-      sendEmail(superDisapointedEmail, "samuel@codeup.com", EmailSubject, "NoGitActivity");
+      sendEmail(superDisapointedEmail, "douglas@codeup.com", EmailSubject, "NoGitActivity");
       return;
 
     } else if (responce.data.length > 0) {
@@ -77,25 +77,29 @@ const checkGitHubActivity = (userName) => {
       const pushEvents = responce.data.filter(event => event.type = 'PushEvent');
       const lastPushEventDate = DateTime.fromISO(pushEvents[0].created_at);
       const numOfDaysSincePush = Math.floor(Math.abs(lastPushEventDate.diffNow('day').values.days));
+      const currentDate = DateTime.local().toLocaleString();
 
-      if (numOfDaysSincePush > 0) {
+      if (!lastPushEventDate.hasSame(currentDate, 'day')) {
+
         console.log("User has no github activity today.");
-        const currentDate = DateTime.local().toLocaleString();
+        let semiDesapointedEmail;
         const EmailSubject = `${currentDate}, No Git Activity Today`;
-        const semiDesapointedEmail = `<h2>Dear ${userName}</h2><p>You currently have no github activity for today.</p><p>Your last push to github was ${numOfDaysSincePush} day(s) ago.</p><p>You can view your current github activity <a href="https://github.com/${userName}">HERE</a></p>`;
-        sendEmail(semiDesapointedEmail, "samuel@codeup.com", EmailSubject, "NoGitActivityToday");
-      }
 
-      console.log(`No action needed for ${userName}, activity was found for today.`);
+        if(numOfDaysSincePush === 0){
+          semiDesapointedEmail = `<h2>Dear ${userName}</h2><p>You currently have no github activity for today.</p><p>Your last push to github was yesterday. Make sure you push your commits today!</p><p>You can view your current github activity <a href="https://github.com/${userName}">HERE</a></p>`;
+        }else{
+          semiDesapointedEmail = `<h2>Dear ${userName}</h2><p>You currently have no github activity for today.</p><p>Your last push to github was ${numOfDaysSincePush} day(s) ago.</p><p>You can view your current github activity <a href="https://github.com/${userName}">HERE</a></p>`;
+        }
+        sendEmail(semiDesapointedEmail, "douglas@codeup.com", EmailSubject, "NoGitActivityToday");
+      }else console.log(`No action needed for ${userName}, activity was found for today.`);
+
+      
 
     }
-
-
-
   }))
 }
 
-
+checkGitHubActivity("douglas-codeup");
 
 
 

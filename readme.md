@@ -10,6 +10,8 @@
 
 * create a `logs.txt` in the root of the project
 
+* you will need to also change the mailing library to use whatever service you use Ex
+
 * run `npm start`
 
 ### all done
