@@ -19,7 +19,7 @@ var transporter = nodemailer.createTransport({
 });
 
 
-const sendEmail = (htmlBody, recipentsEmail, emailSubject = "GitHub Activity Reminder", emailType) => {
+const sendEmail = (htmlBody, recipentsEmail, emailSubject = "GitHub Activity Status", emailType) => {
 
   var mailOptions = {
     from: credentials.hostEmailName,
@@ -74,11 +74,6 @@ const checkCohortsGithubActivity = (cohortName) => {
     studenGithubStats.forEach(result => emailbody += buildEmailBody(result) );
     sendEmail(emailbody,cohort.email,`${currentDate}, ${cohort.name} Github Activity`, `${cohort.name} Github Activity Notifier`);
   });
-
-  // cohortGithubResults.sort((a,b) => b.daysSincePush - a.daysSincePush)
-
-  
-  // console.log(cohortGithubResults)
 }
 
 const getAllGithubActivityStats = (cohort) => {
@@ -144,18 +139,18 @@ const checkGitHubActivity = (userName) => {
 }
 
 const getGitHubActivityStats = (userName) => {
-  return ReqStudentActivity(userName).then((responce => {
+  return ReqStudentActivity(userName).then((response => {
 
-    if (responce.data.length == 0) {
+    if (response.data.length == 0) {
 
       const currentDate = DateTime.local().toLocaleString();
       const EmailSubject = `${currentDate}, No Github Activity`;
       const superDisapointedEmail = `<h2>Dear ${userName}</h2><p>You currently have no github activity, this is very concerning and can negativley impact your job search.</p><p>You can view your current github activity <a href="https://github.com/${userName}">HERE</a></p>`;
       return {"username":userName,"daysSincePush":"no_activity"};
 
-    } else if (responce.data.length > 0) {
+    } else if (response.data.length > 0) {
 
-      const pushEvents = responce.data.filter(event => event.type = 'PushEvent');
+      const pushEvents = response.data.filter(event => event.type = 'PushEvent');
       const lastPushEventDate = DateTime.fromISO(pushEvents[0].created_at);
       const numOfDaysSincePush = Math.floor(Math.abs(lastPushEventDate.diffNow('day').values.days));
       const currentDate = DateTime.local().toLocaleString();
@@ -175,7 +170,7 @@ const getGitHubActivityStats = (userName) => {
 
 (async function sendEmailToAllCohorts(){
   const allCohorts = JSON.parse(fs.readFileSync('cohorts.json'));
-  console.log(allCohorts);
+  
   allCohorts.cohorts.forEach((cohort,index) => {
 
     setTimeout(() => checkCohortsGithubActivity(cohort.name), 3000 * (index + 1));
