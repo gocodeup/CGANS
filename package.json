@@ -19,6 +19,7 @@
   "homepage": "https://github.com/gocodeup/CGANS#readme",
   "dependencies": {
     "@octokit/core": "^3.2.4",
+    "@sendgrid/mail": "^7.4.2",
     "luxon": "^1.25.0",
     "node-cron": "^2.0.3",
     "nodemailer": "^6.4.17"
