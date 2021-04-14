@@ -9,6 +9,8 @@ const { DateTime } = require("luxon");
 
 const credentials = JSON.parse(fs.readFileSync('credentials.json'));
 const octokit = new Octokit({ auth: credentials.githubApiKey });
+const cohorts = JSON.parse(fs.readFileSync('cohorts.json'));
+
 
 var transporter = nodemailer.createTransport({
   service: 'outlook',
@@ -19,61 +21,64 @@ var transporter = nodemailer.createTransport({
 });
 
 
-const sendEmail = (htmlBody, recipentsEmail, emailSubject = "GitHub Activity Status", emailType) => {
+const buildEmail = (htmlBody, recipentsEmail, emailSubject = "GitHub Activity Status", emailType) => {
 
-  var mailOptions = {
-    from: credentials.hostEmailName,
+  const msg = {
     to: recipentsEmail,
+    from: credentials.hostEmailName,
     subject: emailSubject,
-    html: htmlBody
+    html: htmlBody,
   };
 
-  
-  transporter.sendMail(mailOptions, function (error) {
-    if (error) {
-      const currentDate = DateTime.local().toString();
-      const errorMessage = `Failed to send ${emailType} email to ${recipentsEmail}.\nDate: ${currentDate}\n${error}\n\n`;
-      fs.appendFile('logs.txt', errorMessage, (err) => {
-        if (err) throw err;
-        console.log("Saved");
-      })
-    } else {
-      console.log(`Successfully sent ${emailType} email to ${recipentsEmail}.\n`);
-    }
-  });
-
+  return msg
 }
 
+const sortByUrgency = (studentStatsOne,studentStatsTwo) => studentStatsTwo.daysSincePush - studentStatsOne.daysSincePush;
 
-const ReqStudentActivity = (gitHubUserName) => {
+const RequestStudentActivity = (githubUsername) => {
   return octokit.request('GET /users/{username}/events', {
-    username: gitHubUserName
+    username: githubUsername
   })
 }
 
-const didStudentPushToday = (userName) => {
-  return ReqStudentActivity(userName).then((responce => {
-    const pushEvents = responce.data.filter(event => event.type = 'PushEvent')
-    const todaysDate = DateTime.local();
-    const lastPushEventDate = DateTime.fromISO(pushEvents[0].created_at);
-    console.log(todaysDate.toString());
-    console.log(lastPushEventDate.toString());
-    return dateOne.hasSame(dateTwo, 'day');
-  }))
+// const didStudentPushToday = (userName) => {
+//   return RequestStudentActivity(userName).then((responce => {
+//     const pushEvents = responce.data.filter(event => event.type = 'PushEvent')
+//     const todaysDate = DateTime.local();
+//     const lastPushEventDate = DateTime.fromISO(pushEvents[0].created_at);
+//     console.log(todaysDate.toString());
+//     console.log(lastPushEventDate.toString());
+//     return dateOne.hasSame(dateTwo, 'day');
+//   }))
+// }
+
+const retrieveCohortEmailContent = (cohort) => {
+
+  const currentDate = DateTime.local().toLocaleString();
+
+  getAllGithubActivityStats(cohort).then(studentGithubStats => {
+
+    const emailHtmlFooter = `<p>If you notice any <strong>bugs or inconsistent</strong> results please report them to <a href="mailto:samuel@codeup.com">samuel@codeup.com</a>.</p>`;
+
+    studentGithubStats.sort(sortByUrgency)
+
+    let emailbody = `<h2>Today's git activity stutus</h2>`;
+
+    studentGithubStats.forEach(result => emailbody += buildEmailBody(result));
+
+    emailbody += emailHtmlFooter;
+
+    return buildEmail(emailbody,cohort.email,`${currentDate}, ${cohort.name} Github Activity`, `${cohort.name} Github Activity Notifier`);
+  });
+
 }
 
 const checkCohortsGithubActivity = (cohortName) => {
-  const allCohorts = JSON.parse(fs.readFileSync('cohorts.json'));
-  let cohort = allCohorts.cohorts.filter(cohort => cohort.name === cohortName)[0]
-  const currentDate = DateTime.local().toLocaleString();
 
-  getAllGithubActivityStats(cohort).then(studenGithubStats => {
-    studenGithubStats.sort((a,b) => b.daysSincePush - a.daysSincePush)
-    console.log(studenGithubStats)
-    let emailbody = `<h2>Today's git activity stutus</h2>`;
-    studenGithubStats.forEach(result => emailbody += buildEmailBody(result) );
-    sendEmail(emailbody,cohort.email,`${currentDate}, ${cohort.name} Github Activity`, `${cohort.name} Github Activity Notifier`);
-  });
+  let cohort = cohorts.filter(cohort => cohort.name === cohortName)[0]
+
+  return retrieveCohortEmailContent(cohort);
+
 }
 
 const getAllGithubActivityStats = (cohort) => {
@@ -87,59 +92,33 @@ const getAllGithubActivityStats = (cohort) => {
 };
 
 
-const buildEmailBody = (githubResult) =>{
-  switch(githubResult.daysSincePush){
-    case 0:
-      return `<p>${githubResult.name} currently has no github activity for today.</p><p>${githubResult.name} last push to github was yesterday.</p><p><a href="https://github.com/${githubResult.username}">${githubResult.name}'s github</a></p><br>`;
-    case "no_activity":
-      return `<p>${githubResult.name} currently has no github activity in the past year!!.</p><a href="https://github.com/${githubResult.username}">${githubResult.name}'s github</a></p><br>`;
+const severityColorPicker = (daysSincePush) => {
+  switch(daysSincePush){
+    case 1:
+      return `style="background-color: #e0c009; padding: 0 5px; border-radius: 5px;"`;
+    case 2:
+      return `style="background-color: #d18111; padding: 0 5px; border-radius: 5px;"`;
     default:
-      return `<p>${githubResult.name}'s last push to github was ${githubResult.daysSincePush} days ago.</p><p><a href="https://github.com/${githubResult.username}">${githubResult.name}'s github</a></p><br>`;
+      return `style="background-color: #d14711; padding: 0 5px; border-radius: 5px;"`;
   }
 }
 
+const buildEmailBody = (githubResult) =>{
 
-const checkGitHubActivity = (userName) => {
-  ReqStudentActivity(userName).then((responce => {
+  const paragraphTagStyling = `style="background-color: #dddddd; padding: 5px; font-family: system-ui, sans-serif; display: inline-block; border-radius: 5px;"`;
 
-    if (responce.data.length == 0) {
-
-      console.log("User has no recent github activity!");
-      const currentDate = DateTime.local().toLocaleString();
-      const EmailSubject = `${currentDate}, No Github Activity`;
-      const superDisapointedEmail = `<h2>Dear ${userName}</h2><p>You currently have no github activity, this is very concerning and can negativley impact your job search.</p><p>You can view your current github activity <a href="https://github.com/${userName}">HERE</a></p>`;
-      sendEmail(superDisapointedEmail, "douglas@codeup.com", EmailSubject, "NoGitActivity");
-      return;
-
-    } else if (responce.data.length > 0) {
-
-      const pushEvents = responce.data.filter(event => event.type = 'PushEvent');
-      const lastPushEventDate = DateTime.fromISO(pushEvents[0].created_at);
-      const numOfDaysSincePush = Math.floor(Math.abs(lastPushEventDate.diffNow('day').values.days));
-      const currentDate = DateTime.local().toLocaleString();
-
-      if (!lastPushEventDate.hasSame(currentDate, 'day')) {
-
-        console.log("User has no github activity today.");
-        let semiDesapointedEmail;
-        const EmailSubject = `${currentDate}, No Git Activity Today`;
-
-        if(numOfDaysSincePush === 0){
-          semiDesapointedEmail = `<h2>Dear ${userName}</h2><p>You currently have no github activity for today.</p><p>Your last push to github was yesterday. Make sure you push your commits today!</p><p>You can view your current github activity <a href="https://github.com/${userName}">HERE</a></p>`;
-        }else{
-          semiDesapointedEmail = `<h2>Dear ${userName}</h2><p>You currently have no github activity for today.</p><p>Your last push to github was ${numOfDaysSincePush} day(s) ago.</p><p>You can view your current github activity <a href="https://github.com/${userName}">HERE</a></p>`;
-        }
-        sendEmail(semiDesapointedEmail, "douglas@codeup.com", EmailSubject, "NoGitActivityToday");
-      }else console.log(`No action needed for ${userName}, activity was found for today.`);
-
-      
-
-    }
-  }))
+  switch(githubResult.daysSincePush){
+    case 0:
+      return `<p ${paragraphTagStyling}>${githubResult.name} currently has not pushed to github today.</p><br>`;
+    case "no_activity":
+      return `<p ${paragraphTagStyling}>${githubResult.name} currently has no github activity in the past year!!.</p><a href="https://github.com/${githubResult.username}">${githubResult.name}'s github</a></p><br>`;
+    default:
+      return `<p ${paragraphTagStyling}>${githubResult.name}'s last push to github was <span ${severityColorPicker(githubResult.daysSincePush)}>${githubResult.daysSincePush}</span> days ago. <a href="https://github.com/${githubResult.username}">${githubResult.name}'s github</a></p><br>`;
+  }
 }
 
 const getGitHubActivityStats = (userName) => {
-  return ReqStudentActivity(userName).then((response => {
+  return RequestStudentActivity(userName).then((response => {
 
     if (response.data.length == 0) {
 
@@ -168,22 +147,31 @@ const getGitHubActivityStats = (userName) => {
   }))
 }
 
-(async function sendEmailToAllCohorts(){
-  const allCohorts = JSON.parse(fs.readFileSync('cohorts.json'));
-  
-  allCohorts.cohorts.forEach((cohort,index) => {
+const buildAllEmails =_=> {
+  let emails = [];
+  cohorts.forEach((cohort) => {
 
-    setTimeout(() => checkCohortsGithubActivity(cohort.name), 3000 * (index + 1));
+    emails = [...emails,checkCohortsGithubActivity(cohort.name)];
 
-    
   });
-  // let cohort = allCohorts.cohorts.filter(cohort => cohort.name === cohortName)[0]
+  return emails;
+}
 
-  // allCohorts.cohorts.forEach(cohort,index => {
-  //   setTimeout(() => checkCohortsGithubActivity(cohort.name), 1000 * (index + 1));
+const sendAllEmails = (emails) => {
+  sgMail.sendMultiple(emails).then((success,failure) => {
     
-  // });
-})()
+  })
+}
+
+
+const MainBoi =_=> {
+
+  let emailsToSend = buildAllEmails();
+  
+  sendAllEmails(emailsToSend);
+}
+
+MainBoi();
 
 
 
