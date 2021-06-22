@@ -1,24 +1,24 @@
 'use strict';
 
-const fs = require('fs');
+// const fs = require('fs');
 const sgMail = require("@sendgrid/mail")
-var nodemailer = require('nodemailer');
 var cron = require('node-cron');
 const { Octokit } = require("@octokit/core");
 const { DateTime } = require("luxon");
+const axios = require('axios');
+require('dotenv').config();
 
-const credentials = JSON.parse(fs.readFileSync('credentials.json'));
+
+
+const credentials = {
+  githubApiKey: process.env.GITHUB_API_KEY,
+  sendGridApiKey: process.env.SEND_GRID_API_KEY,
+  hostEmailName: process.env.HOST_EMAIL_NAME,
+  toolsAppBearerToken: process.env.TOOLS_APP_BEARER_TOKEN
+};
 const octokit = new Octokit({ auth: credentials.githubApiKey });
-const cohorts = JSON.parse(fs.readFileSync('cohorts.json'));
 
-
-var transporter = nodemailer.createTransport({
-  service: 'outlook',
-  auth: {
-    user: credentials.hostEmailName,
-    pass: credentials.hostEmailPass
-  }
-});
+let cohorts;
 
 
 const buildEmail = (htmlBody, recipentsEmail, emailSubject = "GitHub Activity Status", emailType) => {
@@ -33,7 +33,7 @@ const buildEmail = (htmlBody, recipentsEmail, emailSubject = "GitHub Activity St
   return msg
 }
 
-const sortByUrgency = (studentStatsOne,studentStatsTwo) => studentStatsTwo.daysSincePush - studentStatsOne.daysSincePush;
+const sortByUrgency = (studentStatsOne, studentStatsTwo) => studentStatsTwo.daysSincePush - studentStatsOne.daysSincePush;
 
 const RequestStudentActivity = (githubUsername) => {
   return octokit.request('GET /users/{username}/events', {
@@ -41,34 +41,23 @@ const RequestStudentActivity = (githubUsername) => {
   })
 }
 
-// const didStudentPushToday = (userName) => {
-//   return RequestStudentActivity(userName).then((responce => {
-//     const pushEvents = responce.data.filter(event => event.type = 'PushEvent')
-//     const todaysDate = DateTime.local();
-//     const lastPushEventDate = DateTime.fromISO(pushEvents[0].created_at);
-//     console.log(todaysDate.toString());
-//     console.log(lastPushEventDate.toString());
-//     return dateOne.hasSame(dateTwo, 'day');
-//   }))
-// }
-
 const retrieveCohortEmailContent = (cohort) => {
 
   const currentDate = DateTime.local().toLocaleString();
 
-  getAllGithubActivityStats(cohort).then(studentGithubStats => {
+  return getAllGithubActivityStats(cohort).then(studentGithubStats => {
 
     const emailHtmlFooter = `<p>If you notice any <strong>bugs or inconsistent</strong> results please report them to <a href="mailto:samuel@codeup.com">samuel@codeup.com</a>.</p>`;
 
     studentGithubStats.sort(sortByUrgency)
 
-    let emailbody = `<h2>Today's git activity stutus</h2>`;
+    let emailbody = `<h2>Today's Github Activity Status</h2>`;
 
     studentGithubStats.forEach(result => emailbody += buildEmailBody(result));
 
     emailbody += emailHtmlFooter;
 
-    return buildEmail(emailbody,cohort.email,`${currentDate}, ${cohort.name} Github Activity`, `${cohort.name} Github Activity Notifier`);
+    return buildEmail(emailbody, cohort.email, `${currentDate}, ${cohort.name} Github Activity`, `${cohort.name} Github Activity Notifier`);
   });
 
 }
@@ -82,18 +71,23 @@ const checkCohortsGithubActivity = (cohortName) => {
 }
 
 const getAllGithubActivityStats = (cohort) => {
-  const { students } = cohort;
-  return Promise.all (students.map(student => {
-    const { name, github } = student;
-      return getGitHubActivityStats(github).then(result => {
-        return {...result , "name":name}
+  const { users } = cohort;
+  return Promise.all(users.map((student, index) => {
+
+
+    console.log(index + "BOI")
+    const { name, github_username } = student;
+    return getGitHubActivityStats(github_username).then(result => {
+      return { ...result, "name": name }
     })
+
+
   }))
 };
 
 
 const severityColorPicker = (daysSincePush) => {
-  switch(daysSincePush){
+  switch (daysSincePush) {
     case 1:
       return `style="background-color: #e0c009; padding: 0 5px; border-radius: 5px;"`;
     case 2:
@@ -103,11 +97,11 @@ const severityColorPicker = (daysSincePush) => {
   }
 }
 
-const buildEmailBody = (githubResult) =>{
+const buildEmailBody = (githubResult) => {
 
   const paragraphTagStyling = `style="background-color: #dddddd; padding: 5px; font-family: system-ui, sans-serif; display: inline-block; border-radius: 5px;"`;
 
-  switch(githubResult.daysSincePush){
+  switch (githubResult.daysSincePush) {
     case 0:
       return `<p ${paragraphTagStyling}>${githubResult.name} currently has not pushed to github today.</p><br>`;
     case "no_activity":
@@ -118,14 +112,19 @@ const buildEmailBody = (githubResult) =>{
 }
 
 const getGitHubActivityStats = (userName) => {
+
+  console.log(userName)
+
   return RequestStudentActivity(userName).then((response => {
+
+
 
     if (response.data.length == 0) {
 
       const currentDate = DateTime.local().toLocaleString();
       const EmailSubject = `${currentDate}, No Github Activity`;
       const superDisapointedEmail = `<h2>Dear ${userName}</h2><p>You currently have no github activity, this is very concerning and can negativley impact your job search.</p><p>You can view your current github activity <a href="https://github.com/${userName}">HERE</a></p>`;
-      return {"username":userName,"daysSincePush":"no_activity"};
+      return { "username": userName, "daysSincePush": "no_activity" };
 
     } else if (response.data.length > 0) {
 
@@ -136,42 +135,112 @@ const getGitHubActivityStats = (userName) => {
 
       if (!lastPushEventDate.hasSame(currentDate, 'day')) {
 
-        if(numOfDaysSincePush === 0){
-          return {"username":userName,"daysSincePush":0}
-        }else{
-          return {"username":userName,"daysSincePush":numOfDaysSincePush}
+        if (numOfDaysSincePush === 0) {
+          return { "username": userName, "daysSincePush": 0 }
+        } else {
+          return { "username": userName, "daysSincePush": numOfDaysSincePush }
         }
-      }else console.log(`No action needed for ${userName}, activity was found for today.`);
+      } else console.log(`No action needed for ${userName}, activity was found for today.`);
 
     }
   }))
 }
 
-const buildAllEmails =_=> {
-  let emails = [];
-  cohorts.forEach((cohort) => {
+const buildAllEmails = () => {
+ 
 
-    emails = [...emails,checkCohortsGithubActivity(cohort.name)];
 
-  });
-  return emails;
+    let emails = [];
+
+
+    fetchActiveCohorts().then(res => {
+
+      cohorts = res
+
+      cohorts.forEach((cohort, index) => {
+
+        setTimeout(function () {
+
+          emails = [...emails, checkCohortsGithubActivity(cohort.name)];
+
+        }, 1000 * index)
+
+      });
+
+    });
+
+
+
+  console.log(emails)
+
+  
 }
 
 const sendAllEmails = (emails) => {
-  sgMail.sendMultiple(emails).then((success,failure) => {
-    
-  })
+
+  sgMail.setApiKey(credentials.sendGridApiKey);
+
+  sgMail.sendMultiple(emails)
+    .then(() => {
+      console.log('Emails sent')
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+
+  // })
 }
 
 
-const MainBoi =_=> {
+const MainBoi = () => {
 
-  let emailsToSend = buildAllEmails();
-  
-  sendAllEmails(emailsToSend);
+  Promise.all(buildAllEmails()).then(resolvedEmails => sendAllEmails(resolvedEmails))
+
 }
 
 MainBoi();
+
+
+function fetchActiveCohorts() {
+
+
+
+  return axios.get('https://tools.codeup.com/api/cohorts', {
+    headers: {
+      Authorization: `Bearer ${credentials.toolsAppBearerToken}`
+    }
+  })
+    .then(function (response) {
+
+      return response.data.filter(cohort => {
+        const startDate = DateTime.fromSQL(cohort.start_date);
+        const endDate = DateTime.fromSQL(cohort.end_date);
+
+        if (startDate < DateTime.local() && DateTime.local() < endDate && cohort.program_id === 2 && cohort.slack !== "#null") {
+          return cohort
+        }
+
+      })
+
+    })
+    .catch(function (error) {
+
+    })
+
+
+}
+
+
+
+// console.log(fetchActiveCohorts().then(res => {
+//   console.log(res)
+// }))
+
+// stuff.then(function(res){
+//   console.log(res)
+// })
+
+// console.log(stuff)
 
 
 
@@ -181,6 +250,8 @@ MainBoi();
 
 // checkGitHubActivity("douglas-codeup");
 
+
+// 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
 
 
 // cron.schedule('50 16 * * Monday,Tuesday,Wednesday,Thursday,Friday', () => {
