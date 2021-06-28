@@ -56,11 +56,9 @@ const retrieveCohortEmailContent = (cohort) => {
 
     emailbody += `<p>If you notice any <strong>bugs or inconsistent</strong> results please report them to <a href="mailto:samuel@codeup.com">samuel@codeup.com</a>.</p>`;
 
-    console.log(`${cohort.name.toLowerCase()}-staff.com`)
-
     return buildEmail(
       emailbody,
-      `${cohort.name.toLowerCase()}-staff@codeup.com`,
+      `samuel@codeup.com`,
       `${currentDate}, ${cohort.name} Github Activity`,
       `${cohort.name} Github Activity Notifier`
     );
@@ -186,8 +184,6 @@ const MainBoi = () => {
   });
 };
 
-MainBoi();
-
 function fetchActiveCohorts() {
   return axios
     .get("https://tools.codeup.com/api/cohorts", {
@@ -218,7 +214,6 @@ function fetchActiveCohorts() {
 }
 
 
-// cron.schedule('50 16 * * Monday,Tuesday,Wednesday,Thursday,Friday', () => {
-//   checkGitHubActivity("samuelmoorec");
-//   console.log('running a task every week day at 4:50pm');
-// });
+cron.schedule('20 8 * * Monday,Tuesday,Wednesday,Thursday,Friday', () => {
+  MainBoi();
+});
