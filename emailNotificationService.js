@@ -58,7 +58,7 @@ const retrieveCohortEmailContent = (cohort) => {
 
     return buildEmail(
       emailbody,
-      `samuel@codeup.com`,
+      `${cohort.name.toLowerCase()}-staff@codeup.com`,
       `${currentDate}, ${cohort.name} Github Activity`,
       `${cohort.name} Github Activity Notifier`
     );
