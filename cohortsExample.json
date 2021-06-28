@@ -1,4 +1,0 @@
-{"cohorts":[{"name":"exampleCohortOne","email":"CohortOne-staff@codeup.com","students":[{"name":"student's_name" ,"github":"student's_github_username"},{"name":"student's_name" ,"github":"student's_github_username"}]}
-,{"name":"exampleCohortTwo","email":"CohortTwo-staff@codeup.com","students":[{"name":"student's_name" ,"github":"student's_github_username"},{"name":"student's_name" ,"github":"student's_github_username"}]}
-,{"name":"exampleCohortThree","email":"CohortThree-staff@codeup.com","students":[{"name":"student's_name" ,"github":"student's_github_username"},{"name":"student's_name" ,"github":"student's_github_username"}]}
-]}

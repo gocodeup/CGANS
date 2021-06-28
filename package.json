@@ -20,6 +20,8 @@
   "dependencies": {
     "@octokit/core": "^3.2.4",
     "@sendgrid/mail": "^7.4.2",
+    "axios": "^0.21.1",
+    "dotenv": "^10.0.0",
     "luxon": "^1.25.0",
     "node-cron": "^2.0.3",
     "nodemailer": "^6.4.17"
