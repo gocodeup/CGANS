@@ -214,6 +214,6 @@ function fetchActiveCohorts() {
 }
 
 
-cron.schedule('15 8 * * Monday,Tuesday,Wednesday,Thursday,Friday', () => {
+cron.schedule('20 8 * * Monday,Tuesday,Wednesday,Thursday,Friday', () => {
   MainBoi();
 });
