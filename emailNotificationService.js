@@ -49,9 +49,13 @@ const retrieveCohortEmailContent = (cohort) => {
     studentGithubStats.sort(sortByUrgency);
 
     let emailbody = `<h2>Today's Github Activity Status</h2>`;
-    // studentGithubStats.forEach(
-    //   (result) => (console.log(result))
-    // );
+    let emailAddress;
+    if(cohort.name === `Regulus` || cohort.name === `Sirius`) {
+      emailAddress = `${cohort.name}-staff@codeup.com`
+    } else {
+      emailAddress = `staff-${cohort.name}@codeup.com`
+    }
+
     studentGithubStats.forEach(
       (result) => (emailbody += buildEmailBody(result))
     );
@@ -60,7 +64,7 @@ const retrieveCohortEmailContent = (cohort) => {
 
     return buildEmail(
       emailbody,
-      `ry.sutton@codeup.com`,
+      emailAddress,
       `${currentDate}, ${cohort.name} Github Activity`,
       `${cohort.name} Github Activity Notifier`
     );
@@ -81,8 +85,8 @@ const retrieveCohortStudentsEmailContent = (cohort) => {
       if(emailbody !== ''){
       return buildEmail(
       emailbody, 
-      `ry.sutton@codeup.com`, 
-      `${currentDate}, Github Activity for ${studentData.email}`,
+      `${studentData.email}`, 
+      `${currentDate}, Github Activity for ${studentData.name}`,
       `${cohort.name} Github Activity Notifier`
       )
       }
@@ -159,7 +163,6 @@ const buildStudentEmailBody = (githubResult) => {
 
   switch (githubResult.daysSincePush) {
     case 0:
-      // return `<p ${paragraphTagStyling}>${githubResult.name} pushed yesterday.</p><br>`;
       return ``;
     case "no_activity":
       return `<p ${paragraphTagStyling}>${githubResult.name}, you have no github activity in the past year!!.</p><a href="https://github.com/${githubResult.username}">${githubResult.name}'s github</a></p><br>`;
@@ -300,6 +303,6 @@ function fetchActiveCohorts() {
 }
 
 
-// cron.schedule('0 8 * * Monday,Tuesday,Wednesday,Thursday,Friday', () => {
+cron.schedule('0 8 * * Monday,Tuesday,Wednesday,Thursday,Friday', () => {
   MainBoi();
-// });
+});
