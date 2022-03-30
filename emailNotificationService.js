@@ -51,9 +51,9 @@ const retrieveCohortEmailContent = (cohort) => {
     let emailbody = `<h2>Today's Github Activity Status</h2>`;
     let emailAddress;
     if(cohort.name === `Regulus` || cohort.name === `Sirius`) {
-      emailAddress = `${cohort.name}-staff@codeup.com`
+      emailAddress = `${cohort.name.toLowerCase()}-staff@codeup.com`
     } else {
-      emailAddress = `staff-${cohort.name}@codeup.com`
+      emailAddress = `staff-${cohort.name.toLowerCase()}@codeup.com`
     }
 
     studentGithubStats.forEach(
@@ -61,7 +61,7 @@ const retrieveCohortEmailContent = (cohort) => {
     );
 
     emailbody += `<p>If you notice any <strong>bugs or inconsistent</strong> results please report them to <a href="mailto:samuel@codeup.com">samuel@codeup.com</a>.</p>`;
-
+    console.log(emailAddress)
     return buildEmail(
       emailbody,
       emailAddress,
@@ -82,6 +82,7 @@ const retrieveCohortStudentsEmailContent = (cohort) => {
     return studentGithubStats.map(studentData => {
       
       emailbody = buildStudentEmailBody(studentData)
+
       if(emailbody !== ''){
       return buildEmail(
       emailbody, 
@@ -303,6 +304,6 @@ function fetchActiveCohorts() {
 }
 
 
-cron.schedule('0 8 * * Monday,Tuesday,Wednesday,Thursday,Friday', () => {
+// cron.schedule('0 8 * * Monday,Tuesday,Wednesday,Thursday,Friday', () => {
   MainBoi();
-});
+// });
