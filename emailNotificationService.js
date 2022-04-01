@@ -60,7 +60,7 @@ const retrieveCohortEmailContent = (cohort) => {
       (result) => (emailbody += buildEmailBody(result))
     );
 
-    emailbody += `<p>If you notice any <strong>bugs or inconsistent</strong> results please report them to <a href="mailto:samuel@codeup.com">samuel@codeup.com</a>.</p>`;
+    emailbody += `<p>If you notice any <strong>bugs or inconsistent</strong> results please report them to <a href="mailto:ry.sutton@codeup.com">ry.sutton@codeup.com</a>.</p>`;
     console.log(emailAddress)
     return buildEmail(
       emailbody,
