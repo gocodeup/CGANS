@@ -49,18 +49,50 @@ const retrieveCohortEmailContent = (cohort) => {
     studentGithubStats.sort(sortByUrgency);
 
     let emailbody = `<h2>Today's Github Activity Status</h2>`;
+    let emailAddress;
+    if(cohort.name === `Regulus` || cohort.name === `Sirius`) {
+      emailAddress = `${cohort.name.toLowerCase()}-staff@codeup.com`
+    } else {
+      emailAddress = `staff-${cohort.name.toLowerCase()}@codeup.com`
+    }
 
     studentGithubStats.forEach(
       (result) => (emailbody += buildEmailBody(result))
     );
 
-    emailbody += `<p>If you notice any <strong>bugs or inconsistent</strong> results please report them to <a href="mailto:samuel@codeup.com">samuel@codeup.com</a>.</p>`;
-
+    emailbody += `<p>If you notice any <strong>bugs or inconsistent</strong> results please report them to <a href="mailto:ry.sutton@codeup.com">ry.sutton@codeup.com</a>.</p>`;
+    console.log(emailAddress)
     return buildEmail(
       emailbody,
-      `${cohort.name.toLowerCase()}-staff@codeup.com`,
+      emailAddress,
       `${currentDate}, ${cohort.name} Github Activity`,
       `${cohort.name} Github Activity Notifier`
+    );
+  });
+};
+
+// VERSION OF FUNCTION FOR SENDING STUDENT EMAILS
+const retrieveCohortStudentsEmailContent = (cohort) => {
+  const currentDate = DateTime.local().toLocaleString();
+
+  return getAllGithubActivityStats(cohort).then((studentGithubStats) => {
+    studentGithubStats.sort(sortByUrgency);
+
+    let emailbody;
+    return studentGithubStats.map(studentData => {
+      
+      emailbody = buildStudentEmailBody(studentData)
+
+      if(emailbody !== ''){
+      return buildEmail(
+      emailbody, 
+      `${studentData.email}`, 
+      `${currentDate}, Github Activity for ${studentData.name}`,
+      `${cohort.name} Github Activity Notifier`
+      )
+      }
+    }
+      
     );
   });
 };
@@ -71,19 +103,27 @@ const checkCohortsGithubActivity = (cohortName) => {
   return retrieveCohortEmailContent(cohort);
 };
 
+// VERSION OF FUNCTION FOR SENDING STUDENT EMAILS
+const checkCohortsStudentGithubActivity = (cohortName) => {
+  let cohort = cohorts.filter((cohort) => cohort.name === cohortName)[0];
+
+  return retrieveCohortStudentsEmailContent(cohort);
+};
+
 const getAllGithubActivityStats = (cohort) => {
   const { users } = cohort;
 
   return Promise.all(
     users.map((student) => {
-      const { name, github_username } = student;
+      const { name, github_username, email } = student;
 
       return getGitHubActivityStats(github_username).then((result) => {
-        return { ...result, name: name };
+        return { ...result, name: name, email: email };
       });
     })
   );
 };
+
 
 const severityColorPicker = (daysSincePush) => {
   switch (daysSincePush) {
@@ -115,6 +155,31 @@ const buildEmailBody = (githubResult) => {
       }</span> days ago. <a href="https://github.com/${
         githubResult.username
       }">${githubResult.name}'s github</a></p><br>`;
+  }
+};
+
+// VERSION OF FUNCTION FOR SENDING STUDENT EMAILS
+const buildStudentEmailBody = (githubResult) => {
+  const paragraphTagStyling = `style="background-color: #dddddd; padding: 5px; font-family: system-ui, sans-serif; display: inline-block; border-radius: 5px;"`;
+
+  switch (githubResult.daysSincePush) {
+    case 0:
+      return ``;
+    case "no_activity":
+      return `<p ${paragraphTagStyling}>${githubResult.name}, you have no github activity in the past year!!.</p><a href="https://github.com/${githubResult.username}">${githubResult.name}'s github</a></p><br>`;
+    default:
+      return `<p ${paragraphTagStyling}>${
+        githubResult.name
+      }, your last push to github was <span ${severityColorPicker(
+        githubResult.daysSincePush
+      )}>${
+        githubResult.daysSincePush
+      }</span> days ago.</p>
+      <br>
+      <p>View your github:<a href="https://github.com/${
+        githubResult.username
+      }">${githubResult.name}</a></p><br>
+      <p>Make sure you're committing and pushing everyday!</p>`;
   }
 };
 
@@ -164,6 +229,22 @@ const buildAllEmails = () => {
     );
   });
 };
+// VERSION OF FUNCTION FOR SENDING STUDENT EMAILS
+const buildAllStudentsEmails = () => {
+  return fetchActiveCohorts().then((res) => {
+    cohorts = res;
+
+    return Promise.all(
+      cohorts.map((cohort, index) => {
+        return new Promise(function (resolve) {
+          setTimeout(function () {
+            resolve(checkCohortsStudentGithubActivity(cohort.name));
+          }, 1000 * index);
+        });
+      })
+    );
+  });
+};
 
 const sendAllEmails = (emails) => {
   sgMail.setApiKey(credentials.sendGridApiKey);
@@ -182,6 +263,15 @@ const MainBoi = () => {
   buildAllEmails().then((emailsToSend) => {
     sendAllEmails(emailsToSend);
   });
+  buildAllStudentsEmails().then((emailsToSend) => {
+    let combinedArray = [];
+    emailsToSend.forEach(function (array) {
+      combinedArray.push(...array);
+    });
+    emailsToSend = combinedArray.filter((email) => email !== undefined);
+    // console.log(emailsToSend);
+    sendAllEmails(emailsToSend);
+  })
 };
 
 function fetchActiveCohorts() {
