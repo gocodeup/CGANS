@@ -296,7 +296,6 @@ function fetchActiveCohorts() {
     .catch(function (error) { });
 }
 
-
 cron.schedule('0 8 * * Monday,Tuesday,Wednesday,Thursday,Friday', () => {
 MainBoi();
 });
