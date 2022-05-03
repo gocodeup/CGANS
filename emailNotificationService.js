@@ -303,11 +303,6 @@ function fetchActiveCohorts() {
     .catch(function (error) {});
 }
 
-let timeout = setTimeout(function() {
+cron.schedule('0 8 * * Monday,Tuesday,Wednesday,Thursday,Friday', () => {
   MainBoi();
-}, 60000);
-
-
-// cron.schedule('0 8 * * Monday,Tuesday,Wednesday,Thursday,Friday', () => {
-//   MainBoi();
-// });
+});
