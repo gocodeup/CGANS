@@ -50,7 +50,7 @@ const retrieveCohortEmailContent = (cohort) => {
 
     let emailbody = `<h2>Today's Github Activity Status</h2>`;
     let emailAddress;
-    if(cohort.name === `Regulus` || cohort.name === `Sirius`) {
+    if (cohort.name === `Regulus` || cohort.name === `Sirius`) {
       emailAddress = `${cohort.name.toLowerCase()}-staff@codeup.com`
     } else {
       emailAddress = `staff-${cohort.name.toLowerCase()}@codeup.com`
@@ -80,19 +80,19 @@ const retrieveCohortStudentsEmailContent = (cohort) => {
 
     let emailbody;
     return studentGithubStats.map(studentData => {
-      
+
       emailbody = buildStudentEmailBody(studentData)
 
-      if(emailbody !== ''){
-      return buildEmail(
-      emailbody, 
-      `${studentData.email}`, 
-      `${currentDate}, Github Activity for ${studentData.name}`,
-      `${cohort.name} Github Activity Notifier`
-      )
+      if (emailbody !== '') {
+        return buildEmail(
+          emailbody,
+          `${studentData.email}`,
+          `${currentDate}, Github Activity for ${studentData.name}`,
+          `${cohort.name} Github Activity Notifier`
+        )
       }
     }
-      
+
     );
   });
 };
@@ -146,15 +146,12 @@ const buildEmailBody = (githubResult) => {
     case "no_activity":
       return `<p ${paragraphTagStyling}>${githubResult.name} currently has no github activity in the past year!!.</p><a href="https://github.com/${githubResult.username}">${githubResult.name}'s github</a></p><br>`;
     default:
-      return `<p ${paragraphTagStyling}>${
-        githubResult.name
-      }'s last push to github was <span ${severityColorPicker(
-        githubResult.daysSincePush
-      )}>${
-        githubResult.daysSincePush
-      }</span> days ago. <a href="https://github.com/${
-        githubResult.username
-      }">${githubResult.name}'s github</a></p><br>`;
+      return `<p ${paragraphTagStyling}>${githubResult.name
+        }'s last push to github was <span ${severityColorPicker(
+          githubResult.daysSincePush
+        )}>${githubResult.daysSincePush
+        }</span> days ago. <a href="https://github.com/${githubResult.username
+        }">${githubResult.name}'s github</a></p><br>`;
   }
 };
 
@@ -168,17 +165,14 @@ const buildStudentEmailBody = (githubResult) => {
     case "no_activity":
       return `<p ${paragraphTagStyling}>${githubResult.name}, you have no github activity in the past year!!.</p><a href="https://github.com/${githubResult.username}">${githubResult.name}'s github</a></p><br>`;
     default:
-      return `<p ${paragraphTagStyling}>${
-        githubResult.name
-      }, your last push to github was <span ${severityColorPicker(
-        githubResult.daysSincePush
-      )}>${
-        githubResult.daysSincePush
-      }</span> days ago.</p>
+      return `<p ${paragraphTagStyling}>${githubResult.name
+        }, your last push to github was <span ${severityColorPicker(
+          githubResult.daysSincePush
+        )}>${githubResult.daysSincePush
+        }</span> days ago.</p>
       <br>
-      <p>View your github:<a href="https://github.com/${
-        githubResult.username
-      }">${githubResult.name}</a></p><br>
+      <p>View your github:<a href="https://github.com/${githubResult.username
+        }">${githubResult.name}</a></p><br>
       <p>Make sure you're committing and pushing everyday!</p>`;
   }
 };
@@ -269,7 +263,6 @@ const MainBoi = () => {
       combinedArray.push(...array);
     });
     emailsToSend = combinedArray.filter((email) => email !== undefined);
-    // console.log(emailsToSend);
     sendAllEmails(emailsToSend);
   })
 };
@@ -300,7 +293,7 @@ function fetchActiveCohorts() {
         }
       });
     })
-    .catch(function (error) {});
+    .catch(function (error) { });
 }
 
 cron.schedule('0 8 * * Monday,Tuesday,Wednesday,Thursday,Friday', () => {
