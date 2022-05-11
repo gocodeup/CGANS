@@ -165,7 +165,15 @@ const buildStudentEmailBody = (githubResult) => {
     case "no_activity":
       return `<p ${paragraphTagStyling}>${githubResult.name}, you have no github activity in the past year!!.</p><a href="https://github.com/${githubResult.username}">${githubResult.name}'s github</a></p><br>`;
     default:
-      return `<p ${paragraphTagStyling}>${githubResult.name
+      return `
+      <h3>NOTE:</h3>
+      <p>This message is just a friendly reminder not a punishment or call out!</p>
+      <h3>Keep the following in mind:</h3>
+      <p>Contributions to FORKED or PRIVATE repositories will NOT count as contributions for this email service. <br>
+      You may see them show up in your contribution tracker (green squares) but they're only visible to you as the profile owner. (You can also show private contributions with a setting in 'Contribution Settings'). <br>
+      If you're working on AdLister, any other project that involves a forked repository, or your project repository is set to private, it will show as though you haven't been pushing to github. <br> 
+      If that's the case for you and you know you've been pushing, then don't worry about it :)</p>
+      <p ${paragraphTagStyling}>${githubResult.name
         }, your last push to github was <span ${severityColorPicker(
           githubResult.daysSincePush
         )}>${githubResult.daysSincePush
